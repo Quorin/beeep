@@ -3,11 +3,8 @@
 package beeep
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
 	"os/exec"
-	"strings"
 	"syscall"
 	"time"
 
@@ -17,7 +14,6 @@ import (
 )
 
 var isWindows10 bool
-var applicationID string
 
 func init() {
 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
@@ -32,16 +28,12 @@ func init() {
 	}
 
 	isWindows10 = maj == 10
-
-	if isWindows10 {
-		applicationID = appID()
-	}
 }
 
 // Notify sends desktop notification.
-func Notify(title, message, appIcon string) error {
+func Notify(appId, title, message, appIcon string) error {
 	if isWindows10 {
-		return toastNotify(title, message, appIcon)
+		return toastNotify(appId, title, message, appIcon)
 	}
 
 	err := baloonNotify(title, message, appIcon, false)
@@ -86,39 +78,16 @@ func baloonNotify(title, message, appIcon string, bigIcon bool) error {
 	return tray.ShowMessage(title, message, bigIcon)
 }
 
-func toastNotify(title, message, appIcon string) error {
-	notification := toastNotification(title, message, pathAbs(appIcon))
+func toastNotify(appId, title, message, appIcon string) error {
+	notification := toastNotification(appId, title, message, pathAbs(appIcon))
 	return notification.Push()
 }
 
-func toastNotification(title, message, appIcon string) toast.Notification {
+func toastNotification(appId, title, message, appIcon string) toast.Notification {
 	return toast.Notification{
-		AppID:   applicationID,
+		AppID:   appId,
 		Title:   title,
 		Message: message,
 		Icon:    appIcon,
 	}
-}
-
-func appID() string {
-	defID := "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe"
-	cmd := exec.Command("powershell", "-NoProfile", "Get-StartApps")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	out, err := cmd.Output()
-	if err != nil {
-		return defID
-	}
-
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.Contains(line, "powershell.exe") {
-			sp := strings.Split(line, " ")
-			if len(sp) > 0 {
-				return sp[len(sp)-1]
-			}
-		}
-	}
-
-	return defID
 }
