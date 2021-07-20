@@ -9,7 +9,7 @@
 
 ### Installation
 
-    go get -u github.com/gen2brain/beeep
+    go get -u github.com/Quorin/beeep
 
 ### Examples
 
@@ -21,14 +21,14 @@ if err != nil {
 ```
 
 ```go
-err := beeep.Notify("Title", "Message body", "assets/information.png")
+err := beeep.Notify("App name", "Title", "Message body", "assets/information.png")
 if err != nil {
     panic(err)
 }
 ```
 
 ```go
-err := beeep.Alert("Title", "Message body", "assets/warning.png")
+err := beeep.Alert("App name", "Title", "Message body", "assets/warning.png")
 if err != nil {
     panic(err)
 }
